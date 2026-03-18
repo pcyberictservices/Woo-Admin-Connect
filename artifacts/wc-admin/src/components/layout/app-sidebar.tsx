@@ -1,4 +1,4 @@
-import { LayoutDashboard, ShoppingCart, Store, LogOut, ExternalLink, Settings } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Store, LogOut, ExternalLink, Settings, BarChart3 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useAppSettings } from "@/hooks/use-app-settings";
@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 const mainNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Orders", url: "/orders", icon: ShoppingCart },
+  { title: "Reports", url: "/reports", icon: BarChart3 },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
 
@@ -31,21 +32,19 @@ function NavItem({ item, isActive }: { item: typeof mainNavItems[0]; isActive: b
       <SidebarMenuButton
         asChild
         isActive={isActive}
-        className={`mb-0.5 transition-all duration-200 rounded-lg h-10 ${
+        className={`mb-0.5 transition-all duration-150 rounded-lg h-10 ${
           isActive
-            ? "bg-primary/10 text-primary font-medium"
+            ? "bg-primary/10 text-primary font-semibold"
             : "text-muted-foreground hover:bg-white/5 hover:text-white"
         }`}
       >
         <Link
           href={item.url}
           className="flex items-center gap-3 px-3"
-          onClick={() => {
-            if (isMobile) setOpenMobile(false);
-          }}
+          onClick={() => { if (isMobile) setOpenMobile(false); }}
         >
           <item.icon className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`} />
-          <span>{item.title}</span>
+          <span className="text-sm">{item.title}</span>
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -58,9 +57,9 @@ export function AppSidebar() {
   const { settings } = useAppSettings();
   const { isMobile, setOpenMobile } = useSidebar();
 
-  const titleParts = settings.title.split(" ");
-  const lastName = titleParts.pop() || "";
-  const firstName = titleParts.join(" ") || "Amabelle";
+  const titleWords = settings.title.split(" ");
+  const lastName = titleWords.length > 1 ? titleWords.pop()! : "";
+  const firstName = titleWords.join(" ") || "Admin";
 
   return (
     <Sidebar className="border-r border-border/50 bg-background/50 backdrop-blur-xl">
@@ -74,21 +73,27 @@ export function AppSidebar() {
             )}
           </div>
           <div className="min-w-0">
-            <h2 className="text-base font-bold tracking-tight text-white leading-none truncate">{firstName}</h2>
-            <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider truncate">{lastName} Admin</p>
+            <h2 className="text-base font-bold tracking-tight text-white leading-none truncate">
+              {firstName} {lastName}
+            </h2>
+            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Admin Panel</p>
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 mt-2">
+      <SidebarContent className="px-2 mt-1">
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 px-2">
-            Overview
+            Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNavItems.map((item) => (
-                <NavItem key={item.title} item={item} isActive={location === item.url} />
+                <NavItem
+                  key={item.title}
+                  item={item}
+                  isActive={item.url === "/" ? location === "/" : location.startsWith(item.url)}
+                />
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -102,17 +107,21 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild className="text-muted-foreground hover:bg-white/5 hover:text-white rounded-lg h-10">
-                  <a href="https://amabellefoods.com/shop/" target="_blank" rel="noreferrer" className="flex items-center gap-3 px-3">
+                  <a href="https://amabellefoods.com/shop/" target="_blank" rel="noreferrer"
+                    className="flex items-center gap-3 px-3"
+                    onClick={() => { if (isMobile) setOpenMobile(false); }}>
                     <ExternalLink className="h-4 w-4 shrink-0" />
-                    <span>View Store</span>
+                    <span className="text-sm">View Store</span>
                   </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild className="text-muted-foreground hover:bg-white/5 hover:text-white rounded-lg h-10">
-                  <a href="https://amabellefoods.com/wp-admin" target="_blank" rel="noreferrer" className="flex items-center gap-3 px-3">
+                  <a href="https://amabellefoods.com/wp-admin" target="_blank" rel="noreferrer"
+                    className="flex items-center gap-3 px-3"
+                    onClick={() => { if (isMobile) setOpenMobile(false); }}>
                     <Store className="h-4 w-4 shrink-0" />
-                    <span>WP Admin</span>
+                    <span className="text-sm">WP Admin</span>
                   </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
