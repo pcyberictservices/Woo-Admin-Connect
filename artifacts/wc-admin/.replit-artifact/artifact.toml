@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "WooCommerce Admin"
+version = "1.0.0"
+id = "artifacts/wc-admin"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+localPort = 23352
+name = "web"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/wc-admin run dev"
+
+[services.env]
+PORT = "23352"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/wc-admin", "run", "build"]
+publicDir = "artifacts/wc-admin/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"

@@ -1,0 +1,13 @@
+packages:
+  "date-fns": "For elegant date formatting"
+  "recharts": "For stunning dashboard visualizations"
+  "framer-motion": "For page transitions and staggered enter animations"
+  "clsx": "For conditional class merging"
+  "tailwind-merge": "For elegant tailwind class resolution"
+
+images: []
+
+notes:
+  - "Using provided @workspace/api-client-react hooks for all API interactions."
+  - "Defaulting to a luxurious dark-mode-first aesthetic for a premium admin feel."
+  - "Assuming total order values are provided as strings representing currency amounts."
