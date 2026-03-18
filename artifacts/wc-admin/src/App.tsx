@@ -4,11 +4,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout/layout";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
-import { NotificationBar } from "@/components/layout/notification-bar";
-import { useOrderNotifications } from "@/hooks/use-order-notifications";
+import { AppSettingsProvider } from "@/hooks/use-app-settings";
 
 import Dashboard from "@/pages/dashboard";
 import Orders from "@/pages/orders";
+import Settings from "@/pages/settings";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -21,25 +21,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { user, isLoading } = useAuth();
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-  if (!user) return <Redirect to="/login" />;
-  return <Component />;
-}
-
-function AppNotifications() {
-  const { user } = useAuth();
-  const { notifications, dismiss, dismissAll } = useOrderNotifications(!!user);
-  return <NotificationBar notifications={notifications} onDismiss={dismiss} onDismissAll={dismissAll} />;
-}
 
 function Router() {
   const { user, isLoading } = useAuth();
@@ -65,6 +46,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/orders" component={Orders} />
+        <Route path="/settings" component={Settings} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
@@ -75,12 +57,13 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider delayDuration={300}>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <AuthProvider>
-            <AppNotifications />
-            <Router />
-          </AuthProvider>
-        </WouterRouter>
+        <AppSettingsProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <AuthProvider>
+              <Router />
+            </AuthProvider>
+          </WouterRouter>
+        </AppSettingsProvider>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

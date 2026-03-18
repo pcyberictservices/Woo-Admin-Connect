@@ -236,3 +236,12 @@
     inset: -1px;
   }
 }
+
+/* Hide Replit dev badge */
+[data-replit-badge],
+.__replit_watermark,
+#replit-badge,
+.replit-badge {
+  display: none !important;
+  visibility: hidden !important;
+}
