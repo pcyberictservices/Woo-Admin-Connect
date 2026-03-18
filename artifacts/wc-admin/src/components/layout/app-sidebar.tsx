@@ -2,9 +2,11 @@ import {
   LayoutDashboard, 
   ShoppingCart, 
   Store,
-  Settings
+  LogOut,
+  ExternalLink
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Sidebar,
   SidebarContent,
@@ -17,6 +19,7 @@ import {
   SidebarHeader,
   SidebarFooter
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 
 const mainNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -25,6 +28,7 @@ const mainNavItems = [
 
 export function AppSidebar() {
   const [location] = useLocation();
+  const { user, logout } = useAuth();
 
   return (
     <Sidebar className="border-r border-border/50 bg-background/50 backdrop-blur-xl">
@@ -54,13 +58,11 @@ export function AppSidebar() {
                     <SidebarMenuButton 
                       asChild 
                       isActive={isActive}
-                      className={`
-                        mb-1 transition-all duration-200 rounded-lg h-10
-                        ${isActive 
-                          ? "bg-primary/10 text-primary font-medium shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]" 
+                      className={`mb-1 transition-all duration-200 rounded-lg h-10 ${
+                        isActive 
+                          ? "bg-primary/10 text-primary font-medium" 
                           : "text-muted-foreground hover:bg-white/5 hover:text-white"
-                        }
-                      `}
+                      }`}
                     >
                       <Link href={item.url} className="flex items-center gap-3 px-3">
                         <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
@@ -83,8 +85,16 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild className="text-muted-foreground hover:bg-white/5 hover:text-white rounded-lg h-10">
                   <a href="https://amabellefoods.com/shop/" target="_blank" rel="noreferrer" className="flex items-center gap-3 px-3">
-                    <Store className="h-4 w-4" />
+                    <ExternalLink className="h-4 w-4" />
                     <span>View Store</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild className="text-muted-foreground hover:bg-white/5 hover:text-white rounded-lg h-10">
+                  <a href="https://amabellefoods.com/wp-admin" target="_blank" rel="noreferrer" className="flex items-center gap-3 px-3">
+                    <Store className="h-4 w-4" />
+                    <span>WP Admin</span>
                   </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -94,15 +104,26 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4 border-t border-border/50">
-        <div className="flex items-center gap-3 px-2 py-2">
-          <div className="h-8 w-8 rounded-full bg-secondary border border-border flex items-center justify-center">
-            <Settings className="h-4 w-4 text-muted-foreground" />
+        {user && (
+          <div className="flex items-center gap-3 px-2 py-1">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-sm">
+              {user.displayName.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">{user.displayName}</p>
+              <p className="text-xs text-muted-foreground">Administrator</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={logout}
+              title="Logout"
+              className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-white">Store Settings</span>
-            <span className="text-xs text-muted-foreground">v1.0.0</span>
-          </div>
-        </div>
+        )}
       </SidebarFooter>
     </Sidebar>
   );
