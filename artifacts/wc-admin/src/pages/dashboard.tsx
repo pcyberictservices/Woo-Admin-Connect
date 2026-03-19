@@ -36,7 +36,7 @@ export default function Dashboard() {
     {
       title: "Total Revenue",
       value: fmtMoney(stats?.total_revenue),
-      sub: "All-time gross sales",
+      sub: "Excl. cancelled & failed",
       icon: TrendingUp,
       color: "from-emerald-500/20 to-emerald-500/0 text-emerald-500",
       border: "border-emerald-500/20",
@@ -44,12 +44,30 @@ export default function Dashboard() {
     },
     {
       title: "Completed Revenue",
-      value: fmtMoney((stats as any)?.completed_revenue),
+      value: fmtMoney(stats?.completed_revenue),
       sub: "From completed orders only",
       icon: CheckCircle2,
       color: "from-green-500/20 to-green-500/0 text-green-400",
       border: "border-green-500/20",
       href: "/orders?status=completed",
+    },
+    {
+      title: "Pending Revenue",
+      value: fmtMoney(stats?.pending_revenue),
+      sub: "Awaiting payment",
+      icon: Clock,
+      color: "from-yellow-500/20 to-yellow-500/0 text-yellow-400",
+      border: "border-yellow-500/20",
+      href: "/orders?status=pending",
+    },
+    {
+      title: "On Hold Revenue",
+      value: fmtMoney(stats?.on_hold_revenue),
+      sub: "Awaiting confirmation",
+      icon: AlertCircle,
+      color: "from-orange-500/20 to-orange-500/0 text-orange-400",
+      border: "border-orange-500/20",
+      href: "/orders?status=on-hold",
     },
     {
       title: "Total Orders",
@@ -162,9 +180,9 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {isLoading ? (
+      {isLoading && !data ? (
         <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {[...Array(10)].map((_, i) => (
+          {[...Array(12)].map((_, i) => (
             <Card key={i} className="bg-card/50 border-border/50">
               <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4 px-4">
                 <Skeleton className="h-3 w-20 bg-secondary" />

@@ -73,60 +73,46 @@ function periodDates(period: string): { after: string; before: string } {
 // GET /api/orders/stats
 router.get("/orders/stats", async (_req: Request, res: Response) => {
   try {
-    const statuses = ["pending", "processing", "on-hold", "completed", "cancelled", "refunded", "failed"];
+    const countStatuses = ["pending", "processing", "on-hold", "completed", "cancelled", "refunded", "failed"];
+
+    // Fetch counts (all + per status) in parallel
     const [allResult, ...statusResults] = await Promise.all([
       wcGet("/orders?per_page=1"),
-      ...statuses.map((s) => wcGet(`/orders?status=${s}&per_page=1`)),
+      ...countStatuses.map((s) => wcGet(`/orders?status=${s}&per_page=1`)),
     ]);
 
     const totalOrders = parseInt(allResult.headers.get("X-WP-Total") ?? "0", 10);
     const counts: Record<string, number> = {};
-    for (let i = 0; i < statuses.length; i++) {
-      counts[statuses[i]] = parseInt(statusResults[i].headers.get("X-WP-Total") ?? "0", 10);
+    for (let i = 0; i < countStatuses.length; i++) {
+      counts[countStatuses[i]] = parseInt(statusResults[i].headers.get("X-WP-Total") ?? "0", 10);
     }
 
+    // Page through all active orders (exclude failed & cancelled) to sum revenues
+    // Active statuses: pending, processing, on-hold, completed, refunded
+    const activeStatuses = "pending,processing,on-hold,completed,refunded";
     let totalRevenue = 0;
     let completedRevenue = 0;
+    let pendingRevenue = 0;
+    let onHoldRevenue = 0;
     let currencySymbol = "₦";
 
-    // Fetch revenue from WC reports/sales endpoint
-    try {
-      const revenueResult = await wcGet("/reports/sales?period=custom&date_min=2020-01-01&date_max=2099-12-31");
-      if (revenueResult.status === 200 && Array.isArray(revenueResult.data) && revenueResult.data.length > 0) {
-        const row = revenueResult.data[0] as { total_sales?: string; net_sales?: string };
-        totalRevenue = parseFloat(row?.total_sales ?? "0") || 0;
+    let page = 1;
+    let totalPages = 1;
+    do {
+      const r = await wcGet(`/orders?status=${activeStatuses}&per_page=100&page=${page}`);
+      if (r.status !== 200 || !Array.isArray(r.data)) break;
+      const orders = r.data as Array<{ total?: string; status?: string; currency_symbol?: string }>;
+      for (const o of orders) {
+        const amount = parseFloat(o.total ?? "0") || 0;
+        totalRevenue += amount;
+        if (o.status === "completed") completedRevenue += amount;
+        if (o.status === "pending") pendingRevenue += amount;
+        if (o.status === "on-hold") onHoldRevenue += amount;
+        if (currencySymbol === "₦" && o.currency_symbol) currencySymbol = o.currency_symbol;
       }
-    } catch {}
-
-    // Fetch completed orders revenue by paging through completed orders
-    try {
-      let page = 1;
-      let totalPages = 1;
-      do {
-        const r = await wcGet(`/orders?status=completed&per_page=100&page=${page}`);
-        if (r.status !== 200 || !Array.isArray(r.data)) break;
-        const orders = r.data as Array<{ total?: string; currency_symbol?: string }>;
-        for (const o of orders) {
-          completedRevenue += parseFloat(o.total ?? "0") || 0;
-          if (!currencySymbol || currencySymbol === "₦") {
-            currencySymbol = o.currency_symbol ?? "₦";
-          }
-        }
-        totalPages = parseInt(r.headers.get("X-WP-TotalPages") ?? "1", 10);
-        page++;
-      } while (page <= totalPages && page <= 10);
-    } catch {}
-
-    // If still no currency symbol, try any order
-    if (currencySymbol === "₦") {
-      try {
-        const firstOrder = await wcGet("/orders?per_page=1");
-        if (firstOrder.status === 200 && Array.isArray(firstOrder.data) && firstOrder.data.length > 0) {
-          const o = firstOrder.data[0] as { currency_symbol?: string };
-          if (o.currency_symbol) currencySymbol = o.currency_symbol;
-        }
-      } catch {}
-    }
+      totalPages = parseInt(r.headers.get("X-WP-TotalPages") ?? "1", 10);
+      page++;
+    } while (page <= totalPages && page <= 20);
 
     res.json({
       total_orders: totalOrders,
@@ -139,6 +125,8 @@ router.get("/orders/stats", async (_req: Request, res: Response) => {
       failed: counts["failed"] ?? 0,
       total_revenue: totalRevenue.toFixed(2),
       completed_revenue: completedRevenue.toFixed(2),
+      pending_revenue: pendingRevenue.toFixed(2),
+      on_hold_revenue: onHoldRevenue.toFixed(2),
       currency_symbol: currencySymbol,
     });
   } catch (err) {

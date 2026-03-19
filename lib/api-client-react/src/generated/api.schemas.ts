@@ -87,7 +87,12 @@ export interface OrderStats {
   cancelled: number;
   refunded: number;
   on_hold: number;
+  failed: number;
   total_revenue: string;
+  completed_revenue: string;
+  pending_revenue: string;
+  on_hold_revenue: string;
+  currency_symbol: string;
 }
 
 export type GetOrdersParams = {
