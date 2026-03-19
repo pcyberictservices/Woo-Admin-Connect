@@ -5,11 +5,15 @@ import { NotificationBell } from "./notification-bell";
 import { useOrderNotifications } from "@/hooks/use-order-notifications";
 import { useAuth } from "@/hooks/use-auth";
 import { useAppSettings } from "@/hooks/use-app-settings";
+import { useTheme } from "@/hooks/use-theme";
+import { Moon, Sun } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const { settings } = useAppSettings();
   const { notifications, dismiss, dismissAll } = useOrderNotifications(!!user);
+  const { theme, toggleTheme } = useTheme();
 
   const style = {
     "--sidebar-width": "17rem",
@@ -35,6 +39,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
+              {/* Dark/Light mode toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className="h-8 w-8 text-muted-foreground hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {theme === "dark" ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+              </Button>
               <NotificationBell
                 notifications={notifications}
                 onDismiss={dismiss}

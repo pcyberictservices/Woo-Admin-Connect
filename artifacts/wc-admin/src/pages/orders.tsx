@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { format } from "date-fns";
 import { Search, SlidersHorizontal, ShoppingCart, RotateCcw, AlertTriangle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -26,6 +26,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 
 const STATUS_FILTERS = [
   { value: "any", label: "All Orders" },
@@ -66,9 +67,34 @@ async function fetchOrders(params: { status?: string; search?: string; page: num
 }
 
 export default function Orders() {
+  const [location] = useLocation();
   const [page, setPage] = useState(1);
-  const [status, setStatus] = useState("any");
+
+  // Read initial status from URL query string (e.g. /orders?status=completed)
+  const getInitialStatus = () => {
+    try {
+      const search = window.location.search;
+      const params = new URLSearchParams(search);
+      const s = params.get("status");
+      if (s && STATUS_FILTERS.some(f => f.value === s)) return s;
+    } catch {}
+    return "any";
+  };
+
+  const [status, setStatus] = useState(getInitialStatus);
   const [search, setSearch] = useState("");
+
+  // Re-sync status from URL when navigating from dashboard
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const s = params.get("status");
+    if (s && STATUS_FILTERS.some(f => f.value === s)) {
+      setStatus(s);
+    } else if (!s) {
+      setStatus("any");
+    }
+    setPage(1);
+  }, [location]);
   const debouncedSearch = useDebounce(search, 500);
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());

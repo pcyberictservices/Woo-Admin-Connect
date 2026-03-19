@@ -1,5 +1,4 @@
 import { useGetOrderStats } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -16,10 +15,10 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 export default function Dashboard() {
-  const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   const { data: stats, isLoading, isRefetching, refetch } = useGetOrderStats({
     query: { refetchInterval: 60_000, staleTime: 30_000 }
   });
@@ -27,7 +26,7 @@ export default function Dashboard() {
   const sym = stats?.currency_symbol ?? "₦";
 
   const fmtMoney = (v: string | number | undefined) => {
-    if (!v) return `${sym}0.00`;
+    if (v === undefined || v === null || v === "") return `${sym}0.00`;
     const num = parseFloat(String(v));
     if (isNaN(num)) return `${sym}0.00`;
     return `${sym}${num.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -41,14 +40,16 @@ export default function Dashboard() {
       icon: TrendingUp,
       color: "from-emerald-500/20 to-emerald-500/0 text-emerald-500",
       border: "border-emerald-500/20",
+      href: "/orders",
     },
     {
       title: "Completed Revenue",
-      value: fmtMoney(stats?.completed_revenue),
+      value: fmtMoney((stats as any)?.completed_revenue),
       sub: "From completed orders only",
       icon: CheckCircle2,
       color: "from-green-500/20 to-green-500/0 text-green-400",
       border: "border-green-500/20",
+      href: "/orders?status=completed",
     },
     {
       title: "Total Orders",
@@ -57,6 +58,7 @@ export default function Dashboard() {
       icon: ShoppingCart,
       color: "from-primary/20 to-primary/0 text-primary",
       border: "border-primary/20",
+      href: "/orders",
     },
     {
       title: "Completed",
@@ -65,6 +67,7 @@ export default function Dashboard() {
       icon: CheckCircle2,
       color: "from-blue-500/20 to-blue-500/0 text-blue-500",
       border: "border-blue-500/20",
+      href: "/orders?status=completed",
     },
     {
       title: "Processing",
@@ -73,6 +76,7 @@ export default function Dashboard() {
       icon: Package,
       color: "from-indigo-500/20 to-indigo-500/0 text-indigo-500",
       border: "border-indigo-500/20",
+      href: "/orders?status=processing",
     },
     {
       title: "Pending",
@@ -81,6 +85,7 @@ export default function Dashboard() {
       icon: Clock,
       color: "from-yellow-500/20 to-yellow-500/0 text-yellow-500",
       border: "border-yellow-500/20",
+      href: "/orders?status=pending",
     },
     {
       title: "On Hold",
@@ -89,6 +94,7 @@ export default function Dashboard() {
       icon: AlertCircle,
       color: "from-orange-500/20 to-orange-500/0 text-orange-500",
       border: "border-orange-500/20",
+      href: "/orders?status=on-hold",
     },
     {
       title: "Cancelled",
@@ -97,6 +103,7 @@ export default function Dashboard() {
       icon: XCircle,
       color: "from-red-500/20 to-red-500/0 text-red-500",
       border: "border-red-500/20",
+      href: "/orders?status=cancelled",
     },
     {
       title: "Refunded",
@@ -105,6 +112,7 @@ export default function Dashboard() {
       icon: RefreshCw,
       color: "from-purple-500/20 to-purple-500/0 text-purple-500",
       border: "border-purple-500/20",
+      href: "/orders?status=refunded",
     },
     {
       title: "Failed",
@@ -113,6 +121,7 @@ export default function Dashboard() {
       icon: AlertTriangle,
       color: "from-rose-500/20 to-rose-500/0 text-rose-500",
       border: "border-rose-500/20",
+      href: "/orders?status=failed",
     },
   ];
 
@@ -130,7 +139,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Store Overview</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Store Overview</h2>
           <p className="text-muted-foreground text-sm mt-0.5">Real-time WooCommerce store performance.</p>
         </div>
         <div className="flex gap-2">
@@ -177,25 +186,27 @@ export default function Dashboard() {
         >
           {cards.map((card, i) => (
             <motion.div key={i} variants={item}>
-              <Card className={`relative overflow-hidden border ${card.border} bg-card/40 backdrop-blur-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-default`}>
-                <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl ${card.color} rounded-bl-[80px] opacity-40 pointer-events-none`} />
-                <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4 px-4 relative z-10">
-                  <CardTitle className="text-[11px] font-medium text-muted-foreground leading-tight">
-                    {card.title}
-                  </CardTitle>
-                  <div className={`p-1.5 rounded-lg bg-card border ${card.border}`}>
-                    <card.icon className={`h-3.5 w-3.5 ${card.color.split(" ").pop()}`} />
-                  </div>
-                </CardHeader>
-                <CardContent className="px-4 pb-4 relative z-10">
-                  <div className="text-xl font-bold text-white tracking-tight leading-tight">
-                    {card.value}
-                  </div>
-                  {card.sub && (
-                    <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{card.sub}</p>
-                  )}
-                </CardContent>
-              </Card>
+              <div className="cursor-pointer" onClick={() => navigate(card.href)}>
+                <Card className={`relative overflow-hidden border ${card.border} bg-card/40 backdrop-blur-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group`}>
+                  <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl ${card.color} rounded-bl-[80px] opacity-40 pointer-events-none`} />
+                  <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4 px-4 relative z-10">
+                    <CardTitle className="text-[11px] font-medium text-muted-foreground leading-tight group-hover:text-foreground/80 transition-colors">
+                      {card.title}
+                    </CardTitle>
+                    <div className={`p-1.5 rounded-lg bg-card border ${card.border}`}>
+                      <card.icon className={`h-3.5 w-3.5 ${card.color.split(" ").pop()}`} />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-4 relative z-10">
+                    <div className="text-xl font-bold tracking-tight leading-tight">
+                      {card.value}
+                    </div>
+                    {card.sub && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{card.sub}</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </motion.div>
           ))}
         </motion.div>

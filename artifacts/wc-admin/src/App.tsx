@@ -5,11 +5,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout/layout";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { AppSettingsProvider } from "@/hooks/use-app-settings";
+import { ThemeProvider } from "@/hooks/use-theme";
 
 import Dashboard from "@/pages/dashboard";
 import Orders from "@/pages/orders";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
+import Customers from "@/pages/customers";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -48,6 +50,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/orders" component={Orders} />
+        <Route path="/customers" component={Customers} />
         <Route path="/reports" component={Reports} />
         <Route path="/settings" component={Settings} />
         <Route component={NotFound} />
@@ -60,13 +63,15 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider delayDuration={300}>
-        <AppSettingsProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <AuthProvider>
-              <Router />
-            </AuthProvider>
-          </WouterRouter>
-        </AppSettingsProvider>
+        <ThemeProvider>
+          <AppSettingsProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <AuthProvider>
+                <Router />
+              </AuthProvider>
+            </WouterRouter>
+          </AppSettingsProvider>
+        </ThemeProvider>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

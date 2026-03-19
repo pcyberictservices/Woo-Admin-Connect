@@ -85,26 +85,48 @@ router.get("/orders/stats", async (_req: Request, res: Response) => {
       counts[statuses[i]] = parseInt(statusResults[i].headers.get("X-WP-Total") ?? "0", 10);
     }
 
-    // Get completed revenue: fetch up to 100 completed orders and sum
-    let totalRevenue = "0";
-    let completedRevenue = "0";
+    let totalRevenue = 0;
+    let completedRevenue = 0;
     let currencySymbol = "₦";
+
+    // Fetch revenue from WC reports/sales endpoint
     try {
       const revenueResult = await wcGet("/reports/sales?period=custom&date_min=2020-01-01&date_max=2099-12-31");
-      if (revenueResult.status === 200 && Array.isArray(revenueResult.data)) {
-        const row = (revenueResult.data as Array<{ total_sales?: string; net_sales?: string; currency?: string }>)[0];
-        totalRevenue = row?.total_sales ?? "0";
+      if (revenueResult.status === 200 && Array.isArray(revenueResult.data) && revenueResult.data.length > 0) {
+        const row = revenueResult.data[0] as { total_sales?: string; net_sales?: string };
+        totalRevenue = parseFloat(row?.total_sales ?? "0") || 0;
       }
     } catch {}
 
-    // Fetch currency symbol from first order
+    // Fetch completed orders revenue by paging through completed orders
     try {
-      const firstOrder = await wcGet("/orders?status=completed&per_page=1");
-      if (firstOrder.status === 200 && Array.isArray(firstOrder.data) && firstOrder.data.length > 0) {
-        const o = firstOrder.data[0] as { currency_symbol?: string; total?: string };
-        if (o.currency_symbol) currencySymbol = o.currency_symbol;
-      }
+      let page = 1;
+      let totalPages = 1;
+      do {
+        const r = await wcGet(`/orders?status=completed&per_page=100&page=${page}`);
+        if (r.status !== 200 || !Array.isArray(r.data)) break;
+        const orders = r.data as Array<{ total?: string; currency_symbol?: string }>;
+        for (const o of orders) {
+          completedRevenue += parseFloat(o.total ?? "0") || 0;
+          if (!currencySymbol || currencySymbol === "₦") {
+            currencySymbol = o.currency_symbol ?? "₦";
+          }
+        }
+        totalPages = parseInt(r.headers.get("X-WP-TotalPages") ?? "1", 10);
+        page++;
+      } while (page <= totalPages && page <= 10);
     } catch {}
+
+    // If still no currency symbol, try any order
+    if (currencySymbol === "₦") {
+      try {
+        const firstOrder = await wcGet("/orders?per_page=1");
+        if (firstOrder.status === 200 && Array.isArray(firstOrder.data) && firstOrder.data.length > 0) {
+          const o = firstOrder.data[0] as { currency_symbol?: string };
+          if (o.currency_symbol) currencySymbol = o.currency_symbol;
+        }
+      } catch {}
+    }
 
     res.json({
       total_orders: totalOrders,
@@ -115,7 +137,8 @@ router.get("/orders/stats", async (_req: Request, res: Response) => {
       refunded: counts["refunded"] ?? 0,
       on_hold: counts["on-hold"] ?? 0,
       failed: counts["failed"] ?? 0,
-      total_revenue: totalRevenue,
+      total_revenue: totalRevenue.toFixed(2),
+      completed_revenue: completedRevenue.toFixed(2),
       currency_symbol: currencySymbol,
     });
   } catch (err) {

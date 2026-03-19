@@ -1,4 +1,4 @@
-import { LayoutDashboard, ShoppingCart, Store, LogOut, ExternalLink, Settings, BarChart3 } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Store, LogOut, ExternalLink, Settings, BarChart3, Users } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useAppSettings } from "@/hooks/use-app-settings";
@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 const mainNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Orders", url: "/orders", icon: ShoppingCart },
+  { title: "Customers", url: "/customers", icon: Users },
   { title: "Reports", url: "/reports", icon: BarChart3 },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
